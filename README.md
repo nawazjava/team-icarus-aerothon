@@ -1,7 +1,4 @@
-# Lifecycle-Robust Propulsion — Live Demo
 
-**Live demo:** https://YOUR-USERNAME.github.io/hal-propulsion-demo/
-*(update this link once GitHub Pages is enabled — see below)*
 
 Interactive demo built for the **HAL × IIT Indore Hybrid-Electric Propulsion
 & Digital Twin Challenge**. It shows the one thing that ties both challenge
