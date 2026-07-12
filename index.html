@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lifecycle-Robust Propulsion — Live Demo</title>
+<style>
+  :root{
+    --bg:#10151b;
+    --panel:#1a222b;
+    --panel-2:#212b36;
+    --line:#2c3947;
+    --text:#eef2f6;
+    --text-dim:#8a96a5;
+    --teal:#47d7b5;
+    --teal-dim:rgba(71,215,181,0.14);
+    --amber:#e8a63d;
+    --amber-dim:rgba(232,166,61,0.14);
+    --red:#e8583f;
+    --red-dim:rgba(232,88,63,0.14);
+    --font-ui: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Consolas, "Roboto Mono", monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(71,215,181,0.06), transparent 60%),
+      radial-gradient(1000px 500px at 100% 110%, rgba(232,88,63,0.05), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-ui);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .stage{
+    width:100%;
+    max-width:980px;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:clamp(22px,3vw,30px);
+    font-weight:650;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .subhead{
+    color:var(--text-dim);
+    font-size:14px;
+    margin-bottom:26px;
+    max-width:60ch;
+  }
+
+  .selector{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:24px;
+  }
+  .tab{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    text-align:left;
+    cursor:pointer;
+    color:var(--text);
+    font-family:var(--font-ui);
+    transition:border-color .2s, background .2s, transform .15s;
+    position:relative;
+    overflow:hidden;
+  }
+  .tab:hover{ border-color:#3a4a5a; }
+  .tab:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+  .tab .tab-label{ font-weight:650; font-size:14.5px; }
+  .tab .tab-sub{ font-size:11.5px; color:var(--text-dim); margin-top:3px; }
+  .tab::before{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--line);
+    transition:background .2s;
+  }
+  .tab.active{ background:var(--panel-2); border-color:#3d4c5c; }
+  .tab.active.acc-teal::before{ background:var(--teal); }
+  .tab.active.acc-amber::before{ background:var(--amber); }
+  .tab.active.acc-red::before{ background:var(--red); }
+  .tab.active .tab-label{ color:var(--text); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 300px 1fr;
+    gap:22px;
+  }
+  @media (max-width: 720px){ .grid{ grid-template-columns: 1fr; } }
+
+  .gauge-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .gauge-wrap{ position:relative; width:220px; height:220px; }
+  .gauge-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .gauge-center{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+  }
+  .gauge-number{
+    font-family:var(--font-mono);
+    font-size:44px;
+    font-weight:600;
+    line-height:1;
+    letter-spacing:-0.02em;
+  }
+  .gauge-unit{ font-size:13px; color:var(--text-dim); margin-top:2px; }
+  .gauge-caption{
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-top:10px;
+    font-weight:600;
+  }
+  .legend{
+    display:flex; gap:16px; margin-top:16px; font-size:12px; color:var(--text-dim);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .stats-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .stat-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:baseline;
+    border-bottom:1px solid var(--line);
+    padding-bottom:12px;
+  }
+  .stat-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .stat-label{ font-size:12.5px; color:var(--text-dim); }
+  .stat-value{ font-family:var(--font-mono); font-size:20px; font-weight:600; }
+
+  .timeline{
+    margin-top:22px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 22px 22px;
+  }
+  .timeline h2{
+    font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-dim); font-weight:650; margin:0 0 16px;
+  }
+  .phase-row{ display:grid; grid-template-columns:84px 1fr 96px; align-items:center; gap:12px; margin-bottom:10px; }
+  .phase-name{ font-size:12.5px; color:var(--text-dim); }
+  .phase-bar-track{ position:relative; height:16px; background:var(--panel-2); border-radius:5px; overflow:hidden; }
+  .phase-bar-eng{ position:absolute; left:0; top:0; bottom:0; background:var(--teal); transition:width .6s cubic-bezier(.4,0,.2,1); }
+  .phase-bar-batt{ position:absolute; top:0; bottom:0; background:var(--amber); transition:width .6s cubic-bezier(.4,0,.2,1), left .6s cubic-bezier(.4,0,.2,1); }
+  .phase-total{ font-family:var(--font-mono); font-size:12px; color:var(--text-dim); text-align:right; }
+  .charge-tag{ font-size:10.5px; color:var(--teal); font-family:var(--font-mono); }
+
+  .punchline{
+    margin-top:22px;
+    padding:18px 22px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    font-size:14.5px;
+    line-height:1.55;
+  }
+  .punchline b{ color:var(--text); }
+  .punchline .num{ font-family:var(--font-mono); font-weight:650; }
+
+  .footnote{
+    margin-top:16px;
+    font-size:11px;
+    color:var(--text-dim);
+    opacity:.8;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="eyebrow">HAL × IIT Indore — Live Demo Artifact</div>
+  <h1>Propulsion Sized Against the Whole Engine Lifecycle</h1>
+  <div class="subhead">
+    Same aircraft, same optimized design. Select an engine health state — the
+    Energy Management Controller automatically shifts more load onto the
+    battery as the compressor ages, holding the guaranteed endurance floor.
+  </div>
+
+  <div class="selector" id="selector"></div>
+
+  <div class="grid">
+    <div class="gauge-card">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 220 220">
+          <circle cx="110" cy="110" r="92" fill="none" stroke="var(--line)" stroke-width="14"/>
+          <circle id="arcEngine" cx="110" cy="110" r="92" fill="none" stroke="var(--teal)" stroke-width="14" stroke-linecap="round"
+            style="transition: stroke-dasharray .7s cubic-bezier(.4,0,.2,1), stroke .4s;"/>
+          <circle id="arcBattery" cx="110" cy="110" r="92" fill="none" stroke="var(--amber)" stroke-width="14" stroke-linecap="round"
+            style="transition: stroke-dasharray .7s cubic-bezier(.4,0,.2,1), stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);"/>
+        </svg>
+        <div class="gauge-center">
+          <div class="gauge-number" id="numHours">--</div>
+          <div class="gauge-unit">hours</div>
+          <div class="gauge-caption">Guaranteed Endurance</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--teal)"></i>Engine share</span>
+        <span><i class="dot" style="background:var(--amber)"></i>Battery share</span>
+      </div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stat-row">
+        <div class="stat-label">Engine health index</div>
+        <div class="stat-value" id="statHealth">--</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">Avg. engine load (% of rated)</div>
+        <div class="stat-value" id="statLoad">--</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">Battery assist share</div>
+        <div class="stat-value" id="statAssist">--</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">Thrust margin remaining</div>
+        <div class="stat-value" id="statMargin">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <h2>Mission Power Split — Engine vs. Battery, by Phase</h2>
+    <div id="phaseRows"></div>
+  </div>
+
+  <div class="punchline" id="punchline"></div>
+
+  <div class="footnote">
+    Representative values for the live demo — replace the <code>DATA</code>
+    object at the top of this file's script with your actual lifecycle-robust
+    MATLAB simulation outputs (Generator/Rectifier/DCBus/Battery/Inverter/
+    Motor/Propeller chain, three health-state re-runs) before the pitch.
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// REPLACE THIS DATA OBJECT WITH YOUR ACTUAL MATLAB SIMULATION OUTPUTS
+// (run_optimization.m -> STEP 6b prints exactly these numbers per health
+// state: lifecycle_endurance(h), and the phase-by-phase engine/battery kW
+// is available from results_optimized.P_eng_shaft_kw / P_battery_dc_kw)
+// ============================================================================
+const DATA = {
+  fresh: {
+    key: "fresh", accent: "teal",
+    label: "Fresh Engine", sublabel: "0 flight hours · 100% health",
+    guaranteedHours: 5.6, engineSharePct: 92, batterySharePct: 8,
+    engineLoadAvgPct: 74, thrustMarginPct: 18,
+    phases: [
+      {name:"Takeoff", engineKW:45, batteryKW:15},
+      {name:"Climb",   engineKW:50, batteryKW:10},
+      {name:"Cruise",  engineKW:42, batteryKW:-8},
+      {name:"Loiter",  engineKW:30, batteryKW:5},
+      {name:"Descent", engineKW:10, batteryKW:2}
+    ]
+  },
+  mid: {
+    key: "mid", accent: "amber",
+    label: "500 Flight Hours", sublabel: "Compressor fouling · 93% health",
+    guaranteedHours: 5.4, engineSharePct: 84, batterySharePct: 16,
+    engineLoadAvgPct: 85, thrustMarginPct: 9,
+    phases: [
+      {name:"Takeoff", engineKW:42, batteryKW:18},
+      {name:"Climb",   engineKW:46, batteryKW:14},
+      {name:"Cruise",  engineKW:40, batteryKW:2},
+      {name:"Loiter",  engineKW:26, batteryKW:9},
+      {name:"Descent", engineKW:9,  batteryKW:3}
+    ]
+  },
+  critical: {
+    key: "critical", accent: "red",
+    label: "850 Flight Hours", sublabel: "Service threshold · 86% health",
+    guaranteedHours: 5.2, engineSharePct: 71, batterySharePct: 29,
+    engineLoadAvgPct: 97, thrustMarginPct: 3,
+    phases: [
+      {name:"Takeoff", engineKW:38, batteryKW:22},
+      {name:"Climb",   engineKW:41, batteryKW:19},
+      {name:"Cruise",  engineKW:36, batteryKW:10},
+      {name:"Loiter",  engineKW:22, batteryKW:13},
+      {name:"Descent", engineKW:8,  batteryKW:4}
+    ]
+  }
+};
+
+const ORDER = ["fresh","mid","critical"];
+const ACCENT_VAR = { teal:"var(--teal)", amber:"var(--amber)", red:"var(--red)" };
+
+let current = "fresh";
+const R = 92, C = 2*Math.PI*R;
+
+function buildSelector(){
+  const el = document.getElementById("selector");
+  el.innerHTML = "";
+  ORDER.forEach(key=>{
+    const d = DATA[key];
+    const btn = document.createElement("button");
+    btn.className = "tab acc-" + d.accent + (key===current ? " active":"");
+    btn.innerHTML = '<div class="tab-label">'+d.label+'</div><div class="tab-sub">'+d.sublabel+'</div>';
+    btn.addEventListener("click", ()=>{ current = key; render(true); buildSelector(); });
+    el.appendChild(btn);
+  });
+}
+
+function animateNumber(el, to, duration){
+  const from = parseFloat(el.dataset.val || "0");
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1, (now-start)/duration);
+    const eased = 1 - Math.pow(1-t, 3);
+    const val = from + (to-from)*eased;
+    el.textContent = val.toFixed(1);
+    if(t < 1) requestAnimationFrame(step);
+    else el.dataset.val = to;
+  }
+  requestAnimationFrame(step);
+}
+
+function render(animate){
+  const d = DATA[current];
+  const accentColor = ACCENT_VAR[d.accent];
+
+  // Gauge arcs
+  const engArc = document.getElementById("arcEngine");
+  const battArc = document.getElementById("arcBattery");
+  const engLen = C * d.engineSharePct/100;
+  const battLen = C * d.batterySharePct/100;
+  engArc.setAttribute("stroke-dasharray", engLen + " " + (C-engLen));
+  engArc.setAttribute("stroke-dashoffset", "0");
+  engArc.setAttribute("stroke", accentColor);
+  battArc.setAttribute("stroke-dasharray", battLen + " " + (C-battLen));
+  battArc.setAttribute("stroke-dashoffset", (-engLen));
+
+  // Center number
+  const numEl = document.getElementById("numHours");
+  animateNumber(numEl, d.guaranteedHours, 550);
+
+  // Stat rows
+  document.getElementById("statHealth").textContent =
+    (d.key==="fresh"?"1.00":d.key==="mid"?"0.93":"0.86");
+  document.getElementById("statHealth").style.color = accentColor;
+  document.getElementById("statLoad").textContent = d.engineLoadAvgPct + "%";
+  document.getElementById("statAssist").textContent = d.batterySharePct + "%";
+  document.getElementById("statMargin").textContent = d.thrustMarginPct + "%";
+  document.getElementById("statMargin").style.color =
+    d.thrustMarginPct <= 5 ? "var(--red)" : (d.thrustMarginPct <= 10 ? "var(--amber)" : "var(--text)");
+
+  // Phase timeline
+  const maxScale = 70; // kW, fixed so bars are comparable across states
+  const rowsEl = document.getElementById("phaseRows");
+  rowsEl.innerHTML = "";
+  d.phases.forEach(p=>{
+    const row = document.createElement("div");
+    row.className = "phase-row";
+    const engPct = Math.max(0, (p.engineKW/maxScale)*100);
+    const isCharging = p.batteryKW < 0;
+    const battPct = isCharging ? 0 : Math.max(0, (p.batteryKW/maxScale)*100);
+    const total = p.engineKW + Math.max(0,p.batteryKW);
+
+    row.innerHTML =
+      '<div class="phase-name">'+p.name+'</div>'+
+      '<div class="phase-bar-track">'+
+        '<div class="phase-bar-eng" style="width:'+engPct+'%; background:'+accentColor+'"></div>'+
+        '<div class="phase-bar-batt" style="left:'+engPct+'%; width:'+battPct+'%;"></div>'+
+      '</div>'+
+      '<div class="phase-total">'+
+        (isCharging ? '<span class="charge-tag">⚡ charging '+Math.abs(p.batteryKW)+'kW</span>' : total.toFixed(0)+' kW total') +
+      '</div>';
+    rowsEl.appendChild(row);
+  });
+
+  // Punchline
+  const pl = document.getElementById("punchline");
+  pl.innerHTML = 'Most teams show an aircraft that flies its best day. ' +
+    '<b>This one is guaranteed <span class="num" style="color:'+accentColor+'">' +
+    d.guaranteedHours.toFixed(1) + ' hours</span></b> even at <b>' + d.sublabel + '</b> — ' +
+    'because the propulsion sizing was optimized against the engine\'s whole ' +
+    'service life, and the Energy Management Controller compensates for wear in real time.';
+}
+
+buildSelector();
+render(false);
+</script>
+</body>
+</html>
