@@ -1,6 +1,8 @@
 %% ============================================================================
 %  TURBOSHAFT ENGINE CLASS
 %  ============================================================================
+%  Output of this class is mechanical SHAFT power (feeds the Generator),
+%  not electrical power - matches the series-hybrid architecture.
 
 classdef TurboshaftEngine
     properties
@@ -37,9 +39,6 @@ classdef TurboshaftEngine
             % Efficiency: eta = Work_out / Energy_in
             % 1 kWh of work = 3600 kJ. Fuel burned per kWh = SFC [kg/kWh].
             % Energy in fuel = SFC * LHV [kJ/kg]. LHV (jet fuel) = 43150 kJ/kg.
-            % FIXED: previous formula (1/(SFC*3600*43.15)) was off by ~3-4
-            % orders of magnitude and only "worked" because of the hard
-            % clamp below - it wasn't actually derived from sfc_map.
             LHV_kJ_per_kg = 43150;
             obj.efficiency_map = 3600 ./ (obj.sfc_map * LHV_kJ_per_kg);
         end
