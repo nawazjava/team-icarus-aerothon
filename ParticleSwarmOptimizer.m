@@ -31,30 +31,21 @@ classdef ParticleSwarmOptimizer
             dim = length(lb);
             history.best_fitness = zeros(obj.num_iterations, 1);
             
-            % Initialize swarm
             X = repmat(lb, obj.num_particles, 1) + ...
                 rand(obj.num_particles, dim) .* repmat((ub - lb), obj.num_particles, 1);
-            % FIXED: was using matrix multiplication (*) between a 1xdim
-            % bounds vector and an num_particles x dim random matrix,
-            % which is a dimension mismatch. Needs element-wise (.*),
-            % relying on implicit expansion to broadcast (ub-lb) across
-            % all particles.
             V = (ub - lb) .* 0.1 .* (rand(obj.num_particles, dim) - 0.5);
             
-            % Evaluate initial
             fitness = zeros(obj.num_particles, 1);
             for i = 1:obj.num_particles
                 fitness(i) = obj.obj_func(X(i, :));
             end
             
-            % Track best
             [best_fitness, best_idx] = min(fitness);
             best_design = X(best_idx, :);
             pbest = X;
             pbest_fitness = fitness;
             gbest = best_design;
             
-            % PSO iterations
             for iter = 1:obj.num_iterations
                 for i = 1:obj.num_particles
                     r1 = rand(1, dim);
@@ -67,7 +58,6 @@ classdef ParticleSwarmOptimizer
                     X(i, :) = max(obj.lb, min(obj.ub, X(i, :)));
                 end
                 
-                % Evaluate fitness
                 for i = 1:obj.num_particles
                     fitness(i) = obj.obj_func(X(i, :));
                     
